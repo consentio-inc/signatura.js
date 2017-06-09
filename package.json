@@ -1,6 +1,19 @@
 {
   "name": "signatura-api",
   "version": "0.0.1",
+  "author": {
+    "name": "Federico Bond",
+    "email": "federicobond@gmail.com"
+  },
+  "keywords": [
+    "signatura",
+    "api",
+    "wrapper"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/consentio-inc/signatura.js.git"
+  },
   "main": "index.js",
   "scripts": {
     "test": "mocha --compilers js:babel-register",
