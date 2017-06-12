@@ -272,6 +272,7 @@ export class UpdateDocument extends DocumentBuilder {
 
   onSubmit(callback) {
     this.onSubmit = callback
+    return this
   }
 
   async submit() {
