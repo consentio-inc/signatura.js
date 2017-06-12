@@ -34,9 +34,15 @@ export function getKey(document, privateKey) {
 
 class DocumentBuilder {
 
-  constructor(requestKey) {
-    this._requestKey = requestKey
-    this.privateKey = null
+  constructor(client, privateKey) {
+    this.client = client
+
+    if (typeof privateKey == 'function') {
+      this._requestKey = privateKey
+      this.privateKey = null
+    } else {
+      this.privateKey = privateKey
+    }
     this.participants = []
   }
 
@@ -68,11 +74,11 @@ class DocumentBuilder {
   }
 
   addObserver = (observer) => {
-    return this.addParticipant('observer', observer)
+    return this._addParticipant('observer', observer)
   }
 
   addWorkgroup = (workgroup) => {
-    return this.addParticipant('workgroup', workgroup)
+    return this._addParticipant('workgroup', workgroup)
   }
 
   removeObserver = (observer) => {
@@ -85,7 +91,7 @@ class DocumentBuilder {
 
   setPublic = value => {
     if (value) {
-      return this.addParticipant('public')
+      return this._addParticipant('public')
     } else {
       return this.removeParticipant('public')
     }
@@ -135,8 +141,8 @@ class DocumentBuilder {
 
 export class CreateDocument extends DocumentBuilder {
 
-  constructor(requestKey) {
-    super(requestKey)
+  constructor(client, privateKey) {
+    super(client, privateKey)
     this.documentKey = crypto.randomSecret(32)
   }
 
@@ -154,7 +160,7 @@ export class CreateDocument extends DocumentBuilder {
     return this._addParticipant('signer', signer)
   }
 
-  addParticipant = (type, entity = null) => {
+  _addParticipant = (type, entity = null) => {
     if (type === 'public') {
       this.participants.push({ action: 'add', type, key: this.documentKey.toString('hex') })
     } else {
@@ -164,7 +170,7 @@ export class CreateDocument extends DocumentBuilder {
     return this
   }
 
-  removeParticipant = (type, entity = null) => {
+  _removeParticipant = (type, entity = null) => {
     const index = this.participants.findIndex(p => {
       if (type === 'public') return p.type === 'public'
       else return p.type === type && p.entity.id === entity.id
@@ -205,9 +211,9 @@ export class CreateDocument extends DocumentBuilder {
 
 export class UpdateDocument extends DocumentBuilder {
 
-  constructor(requestKey, originalDocument) {
-    super(requestKey)
-    this.original = originalDocument
+  constructor(client, privateKey, document) {
+    super(client, privateKey)
+    this.original = document
     this.documentKey = null
   }
 
@@ -233,7 +239,7 @@ export class UpdateDocument extends DocumentBuilder {
     return this
   }
 
-  addParticipant = (type, entity = null) => {
+  _addParticipant = (type, entity = null) => {
     if (type !== 'public') {
       this.participants.push({ action: 'add', type, entity })
     } else {
@@ -243,7 +249,7 @@ export class UpdateDocument extends DocumentBuilder {
     return this
   }
 
-  removeParticipant = (type, entity = null) => {
+  _removeParticipant = (type, entity = null) => {
     if (type !== 'public') {
       this.participants.push({ action: 'remove', type, id: entity.id })
     } else {
@@ -262,5 +268,16 @@ export class UpdateDocument extends DocumentBuilder {
     const participants = await this.getParticipantsWithKeys()
 
     return { title, description, participants }
+  }
+
+  onSubmit(callback) {
+    this.onSubmit = callback
+  }
+
+  async submit() {
+    if (typeof this.onSubmit == 'undefined') {
+      throw new Error('submit called before onSubmit')
+    }
+    return this.onSubmit(this.build())
   }
 }

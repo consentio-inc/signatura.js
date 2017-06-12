@@ -89,8 +89,10 @@ export default class Client {
     return this.download(link.url)
   }
 
-  createDocument(data) {
-    return this.request('POST', '/documents/add', { data })
+  createDocument(privateKey) {
+    return new CreateDocument(this, privateKey).onSubmit((data) => {
+      return this.request('POST', '/documents/add', { data })
+    })
   }
 
   updateDocument(documentId, data) {
